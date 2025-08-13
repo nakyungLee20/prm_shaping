@@ -1,0 +1,134 @@
+[
+    {
+        "question": "Let \\[f(x) = \\left\\{\n\\begin{array}{cl} ax+3, &\\text{ if }x>2, \\\\\nx-5 &\\text{ if } -2 \\le x \\le 2, \\\\\n2x-b &\\text{ if } x <-2.\n\\end{array}\n\\right.\\]Find $a+b$ if the piecewise function is continuous (which means that its graph can be drawn without lifting your pencil from the paper).",
+        "completion": [
+            "Step 1: For the piecewise function to be continuous, the cases must \"meet\" at $2$ and $-2$",
+            "Step 2: For example, $ax+3$ and $x-5$ must be equal when $x=2$",
+            "Step 3: This implies $a(2)+3=2-5$, which we solve to get $2a=-6 \\Rightarrow a=-3$",
+            "Step 4: Similarly, $x-5$ and $2x-b$ must be equal when $x=-2$",
+            "Step 5: Substituting, we get $-2-5=2(-2)-b$, which implies $b=3$",
+            "Step 6: So $a+b=-3+3=$"
+        ],
+        "mi_loo": [
+            -0.07718291418722334,
+            0.007656897374485716,
+            0.4082701872629819,
+            0.02461908805655355,
+            1.3231438231060233,
+            4.972793061083043
+        ],
+        "mi_shapley": [
+            0.11676832032258236,
+            -1.099162358750387,
+            0.20061167347458944,
+            -0.7755624649230749,
+            0.15020204769621587,
+            3.7965676044610346
+        ],
+        "mi_margin": [
+            -3.403616398718718,
+            -2.7475806658005943,
+            -1.7532404293610888,
+            -2.4894100595918687,
+            -2.043030475887571,
+            1.0200099275453605
+        ],
+        "mi_norm": [
+            0.3237,
+            0.4017,
+            0.5815,
+            0.4185,
+            0.9767,
+            0.9775
+        ],
+        "gold_answer": "0"
+    },
+    {
+        "question": "A rectangular band formation is a formation with $m$ band members in each of $r$ rows, where $m$ and $r$ are integers. A particular band has less than 100 band members. The director arranges them in a rectangular formation and finds that he has two members left over. If he increases the number of members in each row by 1 and reduces the number of rows by 2, there are exactly enough places in the new formation for each band member. What is the largest number of members the band could have?",
+        "completion": [
+            "Step 1: Let $x$ be the number of band members in each row for the original formation, when two are left over",
+            "Step 2: Then we can write two equations from the given information: $$rx+2=m$$ $$(r-2)(x+1)=m$$ Setting these equal, we find: $$rx+2=(r-2)(x+1)=rx-2x+r-2$$ $$2=-2x+r-2$$ $$4=r-2x$$ We know that the band has less than 100 members",
+            "Step 3: Based on the first equation, we must have $rx$ less than 98",
+            "Step 4: We can guess and check some values of $r$ and $x$ in the last equation",
+            "Step 5: If $r=18$, then $x=7$, and $rx=126$ which is too big",
+            "Step 6: If $r=16$, then $x=6$, and $rx=96$, which is less than 98",
+            "Step 7: Checking back in the second formation, we see that $(16-2)(6+1)=14\\cdot 7=98$ as it should",
+            "Step 8: This is the best we can do, so the largest number of members the band could have is $$"
+        ],
+        "mi_loo": [
+            0.5570028891729963,
+            0.4514541320165586,
+            0.5249492571553076,
+            0.1348956093203899,
+            0.03289616158812114,
+            0.06631644971004791,
+            0.6515389791320372,
+            1.3849741712054238
+        ],
+        "mi_shapley": [
+            -0.8879927542312577,
+            0.4891004325457882,
+            -0.6771484626220176,
+            -0.9939890719255411,
+            -0.855181799591638,
+            1.3182400869884776,
+            2.9359687455081227,
+            2.959607735130601
+        ],
+        "mi_margin": [
+            -1.2167017061005225,
+            -3.4090875994865204,
+            -1.36678771933596,
+            -3.2445621701097007,
+            -2.906570204747826,
+            0.9712924866831649,
+            1.9328603487347369,
+            -0.7038037113094848
+        ],
+        "mi_norm": [
+            0.5,
+            0.5,
+            0.5,
+            0.2827,
+            0.2126,
+            0.2339,
+            0.5481,
+            0.9472
+        ],
+        "gold_answer": "98"
+    },
+    {
+        "question": "What is the degree of the polynomial $(4 +5x^3 +100 +2\\pi x^4 + \\sqrt{10}x^4 +9)$?",
+        "completion": [
+            "Step 1: This polynomial is not written in standard form",
+            "Step 2: However, we don't need to write it in standard form, nor do we need to pay attention to the coefficients",
+            "Step 3: We just look for the exponents on $x$",
+            "Step 4: We have an $x^4$ term and no other term of higher degree, so $$ is the degree of the polynomial"
+        ],
+        "mi_loo": [
+            0.2642162162660737,
+            0.6368374204505018,
+            0.13720587040822618,
+            0.9132062546376263
+        ],
+        "mi_shapley": [
+            -0.2643764479167987,
+            -0.16955301475274426,
+            -0.08577911391391443,
+            1.2836822150457323
+        ],
+        "mi_margin": [
+            -6.2296486033561695,
+            -2.072731992555192,
+            -2.097645307993395,
+            -0.4097431084912353
+        ],
+        "mi_norm": [
+            0.4229,
+            0.5771,
+            0.3057,
+            0.8012
+        ],
+        "gold_answer": "4"
+    }
+]
