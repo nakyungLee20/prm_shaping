@@ -11,6 +11,7 @@ from transformers import (
     AutoTokenizer, AutoModelForCausalLM,
     Trainer, TrainingArguments, PreTrainedModel
 )
+import wandb
 from peft import LoraConfig, get_peft_model, PeftModel
 from dataset import PRMDataset, PRMPackCollator
 from wrapper import PRMRewardWrapper
