@@ -16,8 +16,8 @@ from transformers import (
 from datasets import load_dataset
 from vllm import LLM, SamplingParams
 
-os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"  # Arrange GPU devices starting from 0
-os.environ["CUDA_VISIBLE_DEVICES"]= "3"
+# os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"  # Arrange GPU devices starting from 0
+# os.environ["CUDA_VISIBLE_DEVICES"]= "3"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 ##############################################################################
@@ -59,22 +59,22 @@ def build_user_prompt(question: str) -> str:
     parts.append("Problem: " + question.strip())
     return "\n".join(parts).strip()
 
-def to_chat_prompt(question: str) -> str:
+def to_chat_prompt(tokenizer, question: str, eval_style: str = "default") -> str:
+    if eval_style == "qwen_eval":
+        user = f"{question.strip()}\n\nPlease reason step by step, and put your final answer within `Answer: \\boxed{{}}`."
+    else:
+        user = build_user_prompt(question)
     messages = [
         {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user",   "content": build_user_prompt(question)},
+        {"role": "user",   "content": user},
     ]
-    return tokenizer.apply_chat_template(
-        messages,
-        tokenize=False,
-        add_generation_prompt=True
-    )
+    return tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
 
-def batched_generate_vllm(questions: List[str], llm: LLM, tokenizer, n: int = 1, temperature: float = 0.2, top_p: float = 0.9, max_tokens: int = 512, seed: Optional[int] = 123,) -> List[List[str]]:
+def batched_generate_vllm(questions: List[str], llm: LLM, tokenizer, n: int = 1, temperature: float = 0.2, top_p: float = 0.9, max_tokens: int = 512, seed: Optional[int] = 123, eval_style: Optional[str] = "default") -> List[List[str]]:
     assert n >= 1
     do_sample = (n > 1) or (temperature and temperature > 1e-8)
 
-    prompts = [to_chat_prompt(tokenizer, q) for q in questions]
+    prompts = [to_chat_prompt(tokenizer, q, eval_style=eval_style) for q in questions]
     sp = SamplingParams(
         temperature = (temperature if do_sample else 0.0),
         top_p       = (top_p if do_sample else 1.0),
@@ -90,7 +90,7 @@ def batched_generate_vllm(questions: List[str], llm: LLM, tokenizer, n: int = 1,
     result: List[List[str]] = []
     for out in outs:
         gens_i = [o.text.strip() for o in out.outputs]
-        print("Check Generation:", gens_i)
+        # print("Check Generation:", gens_i)
         result.append(gens_i)
     return result
 
@@ -103,6 +103,7 @@ def _chunk(lst, size):
 ##############################################################################
 # extract pred answer
 ANS_LINE = re.compile(r"^\s*answer\s*:\s*(.+?)\s*$", re.IGNORECASE | re.MULTILINE)
+HINT_ANS = re.compile(r"(?i)\b(?:the\s+)?(?:final\s+)?answer\s*(?:is\s+equal\s+to|is|=|equals|:)\s*([^\n]+)")
 _BOXED = re.compile(r"\\boxed\{([^}]*)\}")
 NUM_FINDER = re.compile(r"[-+]?\d+(?:\.\d+)?")
 _MIXED_FRAC = re.compile(r"[-+]?\d+\s+\d+/\d+")
@@ -147,6 +148,11 @@ def _post_clean_numberish(s: str) -> str:
     if not s:
         return ""
     t = s.strip()
+    
+    boxed = _BOXED.search(t)
+    if boxed:
+        t = boxed.group(1)
+    
     for rx in (_MIXED_FRAC, _PURE_FRAC, _DEC_SCI):
         hits = rx.findall(t)
         if hits:
@@ -238,19 +244,25 @@ def gsm_extract_gold(gold_field: str) -> str:
 def gsm_extract_pred(text: str):
     if not text:
         return ""
-    # 1) find "Answer: ..." line
+    # 1) find "\boxed{...}" qwen style
+    m_all = list(_BOXED.finditer(text))
+    if m_all:
+        cand = _post_clean_numberish(m_all[-1].group(1))
+        if cand:
+            return cand
+    # 2) find "Answer: ..." line
     m = ANS_LINE.search(text)
     if m:
         cand = _post_clean_numberish(m.group(1))
         if cand:
             return cand
-    # 2) find "\boxed{...}" qwen style
-    m = _BOXED.search(text)
-    if m:
-        cand = _post_clean_numberish(m.group(1))
+    # 3) other types of answers
+    m2 = HINT_ANS.search(text)
+    if m2:
+        cand = _post_clean_numberish(m2.group(1))
         if cand:
             return cand
-    # 3) fallback
+    # 4) fallback
     last = _find_last_numberish(text)
     return last or ""
 
@@ -352,7 +364,7 @@ if __name__ == "__main__":
         trust_remote_code=True,
         dtype="bfloat16", 
         tensor_parallel_size=1,        # 멀티GPU면 2+ 로
-        gpu_memory_utilization=0.90, 
+        gpu_memory_utilization=0.80, 
         max_model_len=4096,
         quantization="bitsandbytes", 
         # enforce_eager=True, 
@@ -362,6 +374,6 @@ if __name__ == "__main__":
     gsm8k = load_dataset("openai/gsm8k", "main", split="test")
 
     # Evaluation
-    incorr_path = "/home/leena/ccc_eval/prm_rs/analysis/incorrect_gsm8k_vllm.json"
-    acc, logs, incorrect = evaluate_gsm8k_vllm(gsm8k, llm=llm, tokenizer=tokenizer, limit=2, n=1, max_tokens=512, batch_size=32, save_incorrect_path=incorr_path)
+    incorr_path = "/home/leena/prm_shaping/analysis/incorr_gsm8k_vllm_0814.json"
+    acc, logs, incorrect = evaluate_gsm8k_vllm(gsm8k, llm=llm, tokenizer=tokenizer, n=1, max_tokens=1024, batch_size=32, save_incorrect_path=incorr_path)
 

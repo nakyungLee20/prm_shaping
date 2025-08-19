@@ -9,6 +9,17 @@ import torch.nn as nn
 import torch.nn.functional as F
 import os, json, math, random
 
+HEAD_FNAME = "reward_head.pt"
+META_FNAME = "wrapper_meta.json"
+
+def _write_json(obj: Dict[str, Any], path: str):
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(obj, f, ensure_ascii=False, indent=2)
+
+def _read_json(path: str) -> Dict[str, Any]:
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
 
 class PRMRewardWrapper(nn.Module):
     def __init__(self, backbone: PreTrainedModel, rw_token_id: Optional[int] = None, rw_token: Optional[str] = "<RW>"):
@@ -20,10 +31,18 @@ class PRMRewardWrapper(nn.Module):
         self.rw_token = rw_token
 
     def forward(self, input_ids=None, attention_mask=None, **kwargs):
-        out = self.backbone(input_ids=input_ids, attention_mask=attention_mask, output_hidden_states=True,use_cache=False, return_dict=True,)
-        hs = out.hidden_states[-1]        # (B, T, H)
-        return hs
-    
+        # out = self.backbone(input_ids=input_ids, attention_mask=attention_mask, output_hidden_states=True,use_cache=False, return_dict=True,)
+        # hs = out.hidden_states[-1]        # (B, T, H)
+        # return hs
+        transformer_blocks = self.backbone.base_model.model.model
+        outputs = transformer_blocks(
+            input_ids=input_ids,
+            attention_mask=attention_mask,
+            return_dict=True,
+            use_cache=False,
+        )
+        return outputs.last_hidden_state
+
     @property
     def config(self):
         return self.backbone.config
@@ -36,7 +55,17 @@ class PRMRewardWrapper(nn.Module):
     
     def gradient_checkpointing_enable(self, **kwargs):
         if hasattr(self.backbone, "gradient_checkpointing_enable"):
-            return self.backbone.gradient_checkpointing_enable(**kwargs)
+            self.backbone.gradient_checkpointing_enable(**kwargs)
+        if hasattr(self.backbone, "enable_input_require_grads"):
+            self.backbone.enable_input_require_grads()
+        if hasattr(self.backbone.config, "use_cache"):
+            self.backbone.config.use_cache = False
+        
+    def _ensure_head_matches(self, hs: torch.Tensor):
+        # reward_head를 hs의 device/dtype으로 동기화
+        p = next(self.reward_head.parameters(), None)
+        if p is None or p.device != hs.device or p.dtype != hs.dtype:
+            self.reward_head.to(device=hs.device, dtype=hs.dtype)
 
     def save_pretrained(self, save_directory: str, **kwargs):
         os.makedirs(save_directory, exist_ok=True)
@@ -53,27 +82,18 @@ class PRMRewardWrapper(nn.Module):
             bb_dir = os.path.join(save_directory, "backbone")
             self.backbone.save_pretrained(bb_dir, **kwargs)
             meta["storage"] = "backbone"
-
         torch.save(self.reward_head.state_dict(), os.path.join(save_directory, HEAD_FNAME))
         _write_json(meta, os.path.join(save_directory, META_FNAME))
     
     @classmethod
     def from_pretrained(cls, model_dir: str, *, tokenizer=None, base_model_name_or_path: Optional[str] = None, 
         device_map: Optional[str] = "auto", torch_dtype: Optional[torch.dtype] = None, rw_token: Optional[str] = "<RW>", **kwargs) -> "PRMRewardWrapper":
-        """
-        model_dir:
-          - adapter/ 존재하면 LoRA 어댑터 로드
-          - backbone/ 존재하면 풀 SFT 백본 로드
-          - reward_head.pt + wrapper_meta.json 은 항상 필요
-        """
         meta_path = os.path.join(model_dir, META_FNAME)
         head_path = os.path.join(model_dir, HEAD_FNAME)
         assert os.path.exists(head_path), f"Missing reward head at {head_path}"
         meta = _read_json(meta_path) if os.path.exists(meta_path) else {}
 
         storage = meta.get("storage")  # "adapter" or "backbone"
-        is_peft = bool(meta.get("is_peft", storage == "adapter"))
-
         if storage == "adapter":
             adapter_dir = os.path.join(model_dir, "adapter")
             assert os.path.isdir(adapter_dir), f"Missing adapter dir: {adapter_dir}"
@@ -111,12 +131,10 @@ class PRMRewardWrapper(nn.Module):
                     base_name, device_map=device_map, torch_dtype=torch_dtype, trust_remote_code=True
                 )
                 backbone = PeftModel.from_pretrained(base, adapter_dir, device_map=device_map)
-                is_peft = True
             elif os.path.isdir(bb_dir):
                 backbone = AutoModelForCausalLM.from_pretrained(
                     bb_dir, device_map=device_map, torch_dtype=torch_dtype, trust_remote_code=True
                 )
-                is_peft = False
             else:
                 raise FileNotFoundError(f"Neither adapter/ nor backbone/ exists in {model_dir}")
 
@@ -139,9 +157,9 @@ class PRMRewardWrapper(nn.Module):
 
         return wrapper
 
-    @torch.no_grad()
     def predict_rewards_at_rw(self, input_ids: torch.Tensor, attention_mask: torch.Tensor, rw_positions: Optional[List[torch.Tensor]] = None) -> List[torch.Tensor]:
         hs = self(input_ids=input_ids, attention_mask=attention_mask)  # (B,T,H)
+        self._ensure_head_matches(hs)
         B, T, H = hs.shape
         out = []
         if rw_positions is None:
