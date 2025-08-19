@@ -255,7 +255,7 @@ def process_dataset_copy(data: List[Dict[str, Any]],*,min_raw_value: float = -1e
     out = []
     stats = {"total": 0, "types": Counter(), "positions": Counter()}
     for e in data:
-        ne = inject_incorrect_step( e,min_raw_value=min_raw_value, norm_mode_for_mi_norm=norm_mode_for_mi_norm, norm_kwargs=norm_kwargs, perturbation_probs=perturbation_probs,)
+        ne = inject_incorrect_step(e,min_raw_value=min_raw_value, norm_mode_for_mi_norm=norm_mode_for_mi_norm, norm_kwargs=norm_kwargs, perturbation_probs=perturbation_probs,)
         out.append(ne)
         stats["total"] += 1
         stats["types"][ne["perturbation"]] += 1
@@ -286,15 +286,15 @@ def process_file_copy(input_path: str, output_path: str, **kwargs):
 
 
 def main():
-    input_file = "/home/leena/ccc_eval/mcts_prm/cmi_samples/test_json.json"
-    output_file = "/home/leena/ccc_eval/mcts_prm/cmi_samples/test_incorr.json"
+    input_file = "/home/leena/prm_shaping/samples/math_mi_mistral_full.json"
+    output_file = "/home/leena/prm_shaping/samples/incorr_math_mi_full.json"
     process_file_copy(
         input_path=input_file,
         output_path=output_file,
         min_raw_value=-1e5,
         norm_mode_for_mi_norm="unit",                # "signed" | "unit" | "minmax" | "relu"
         norm_kwargs={"tau":1.5, "clip_z":3.0, "deadzone":0.2, "q_low":5, "q_high":95, "round_to":4},
-        perturbation_probs={"wrong_step":0.4, "irrelevant":0.4, "self_reflection":0.2},
+        perturbation_probs={"wrong_step":0.45, "irrelevant":0.35, "self_reflection":0.2},
     )
 
 if __name__ == "__main__":

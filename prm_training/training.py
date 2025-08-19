@@ -8,30 +8,23 @@ import torch.nn.functional as F
 from torch.utils.data import random_split
 from torch.utils.data import Dataset
 from transformers import (
-    AutoTokenizer, AutoModelForCausalLM,
+    AutoTokenizer, AutoModelForCausalLM, AutoModel,
     Trainer, TrainingArguments, PreTrainedModel
 )
 import wandb
 from peft import LoraConfig, get_peft_model, PeftModel
 from dataset import PRMDataset, PRMPackCollator
 from wrapper import PRMRewardWrapper
+from transformers import set_seed as _hf_set_seed
 
-os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"  # Arrange GPU devices starting from 0
-os.environ["CUDA_VISIBLE_DEVICES"]= "2"
+# os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"  # Arrange GPU devices starting from 0
+# os.environ["CUDA_VISIBLE_DEVICES"]= "2"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 os.environ["WANDB_PROJECT"]="mc_prm"
 os.environ["WANDB_WATCH"]="false"
 
 # ------------------------------------------------------------------------------------
-try:
-    from transformers import set_seed as _hf_set_seed      # 최신 버전
-except Exception:
-    try:
-        from transformers.trainer_utils import set_seed as _hf_set_seed  # 구버전
-    except Exception:
-        _hf_set_seed = None
-
 def set_all_seeds(seed: int):
     random.seed(seed)
     np.random.seed(seed)
@@ -63,7 +56,8 @@ class PRMTrainer(Trainer):
 
         preds, tgts, wgts = [], [], []
         for b in range(B):
-            pos = inputs["rw_positions"][b].to(hs.device)            # (K,)
+            # pos = inputs["rw_positions"][b].to(hs.device)            # (K,)
+            pos = torch.tensor(inputs["rw_positions"][b], device=hs.device)
             tar = inputs["targets_list"][b].to(hs.device).float()    # (K,)
             inc = inputs["is_incorrect_list"][b].to(hs.device).long()# (K,)
             if pos.numel() == 0: 
@@ -84,7 +78,8 @@ class PRMTrainer(Trainer):
         wgts  = torch.cat(wgts,  dim=0)  # (N,)
 
         base = regression_loss(preds, tgts, kind=self.loss_type, delta=self.huber_delta)  # (N,)
-        loss = (base * wgts).mean()
+        # loss = (base * wgts).mean()
+        loss = (base * wgts).sum() / (wgts.sum().clamp_min(1.0))
         outputs = {"preds": preds.detach(), "tgts": tgts.detach()}
 
         return (loss, outputs) if return_outputs else loss
@@ -125,22 +120,22 @@ class TrainConfig:
     model_name: str = "Qwen/Qwen2.5-Math-7B"   # or "meta-llama/Meta-Llama-3.1-8B", "mistralai/Mistral-7B-v0.3"
     rw_token: str = "<RW>"
     add_rw_token: bool = True
-    max_length: int = 3500
-    output_dir: str = "/home/leena/ccc_eval/mcts_prm/checkpoints/mi"
+    max_length: int = 4096
+    output_dir: str = "/home/leena/prm_shaping/checkpoints/mi_loo_0816"
     # trainarguments
     per_device_train_batch_size: int = 16
-    per_device_eval_batch_size: int = 10
+    per_device_eval_batch_size: int = 8
     gradient_accumulation_steps: int = 4
     gradient_checkpointing: bool = True
-    num_train_epochs: int = 2
+    num_train_epochs: int = 3
     learning_rate: float = 2e-5
     learning_rate_head: float = 2e-4      # reward_head 크게
     learning_rate_embed: float = 2e-6
     weight_decay: float = 0.01
     warmup_ratio: float = 0.05
-    logging_steps: int = 100
-    save_steps: int = 1000
-    eval_steps: int = 500
+    logging_steps: int = 50
+    save_steps: int = 600
+    eval_steps: int = 200
     bf16: bool = True
     seed: int = 42
     # loss
@@ -175,12 +170,16 @@ def main(cfg: TrainConfig):
     base = AutoModelForCausalLM.from_pretrained(
         cfg.model_name,
         trust_remote_code=True,
-        torch_dtype=torch.bfloat16 if cfg.bf16 else torch.float32,
+        torch_dtype=torch.bfloat16 if cfg.bf16 else torch.float16,
         device_map="auto",
     )
 
     if cfg.gradient_checkpointing:
         base.gradient_checkpointing_enable()
+        if hasattr(base, "enable_input_require_grads"):
+            base.enable_input_require_grads()
+        if hasattr(base.config, "use_cache"):
+            base.config.use_cache = False
 
     if cfg.add_rw_token and cfg.rw_token not in tok.get_vocab():
         tok.add_special_tokens({"additional_special_tokens": [cfg.rw_token]})
@@ -201,15 +200,14 @@ def main(cfg: TrainConfig):
     model = PRMRewardWrapper(base, rw_token_id=rw_id, rw_token=cfg.rw_token)
     emb_module = model.backbone.get_input_embeddings()   # nn.Embedding
     emb_module.weight.requires_grad_(True)
-    # print("Model Strucutre:", model)
+    print("Model Strucutre:", model)
 
     # 2) Dataset (pack mode)
-    data_path = "/home/leena/ccc_eval/mcts_prm/cmi_samples/test_incorr.json"
+    data_path = "/home/leena/prm_shaping/samples/incorr_mi_full.json"
     with open(data_path, "r", encoding="utf-8") as f:
         entries = json.load(f)
 
-    full_ds  = PRMDataset(
-        entries , tok,
+    full_ds  = PRMDataset(entries , tok,
         reward_key=cfg.reward_key,
         reward_source_priority=list(cfg.reward_source_priority),
         apply_norm=cfg.apply_norm, norm_mode=cfg.norm_mode, norm_kwargs=cfg.norm_kwargs,
@@ -225,7 +223,7 @@ def main(cfg: TrainConfig):
     train_ds, val_ds = random_split(full_ds, [n_train, n_val], generator=torch.Generator().manual_seed(cfg.seed))
 
     data_collator = PRMPackCollator(pad_token_id=tok.pad_token_id, rw_token_id=tok.convert_tokens_to_ids(cfg.rw_token), strict=False,)
-    print(f"Load model and {cfg.reward_key} type dataset!")
+    print(f"Load model and {cfg.reward_key}_{cfg.norm_mode} type dataset!")
 
     # 3) TrainingArguments
     args = TrainingArguments(
@@ -245,7 +243,7 @@ def main(cfg: TrainConfig):
         eval_steps=cfg.eval_steps if val_ds is not None else None,
         bf16=cfg.bf16,
         report_to=["wandb"],
-        run_name = f"test_{cfg.reward_key}_{cfg.norm_mode}_test",
+        run_name = f"test_{cfg.reward_key}_{cfg.norm_mode}_0818",
     )
     setattr(args, "learning_rate_head", cfg.learning_rate_head)
     setattr(args, "learning_rate_embed", cfg.learning_rate_embed)
@@ -266,9 +264,13 @@ def main(cfg: TrainConfig):
     print("Start Training")
     torch.cuda.empty_cache()
     trainer.train()
-    trainer.save_model(os.path.join(cfg.output_dir, "final_model"))
-    tok.save_pretrained(os.path.join(cfg.output_dir, "final_model"))
-    adapter_dir = os.path.join(cfg.output_dir, "final_model/adapter")
+    save_dir = os.path.join(cfg.output_dir, "final_model")
+    model.save_pretrained(save_dir)     # ← (HEAD_FNAME/META_FNAME 포함)
+    tok.save_pretrained(save_dir)
+    # trainer.save_model(os.path.join(cfg.output_dir, "final_model"))
+    # tok.save_pretrained(os.path.join(cfg.output_dir, "final_model"))
+    # adapter_dir = os.path.join(cfg.output_dir, "final_model/adapter")
+    # model.backbone.save_pretrained(adapter_dir, safe_serialization=True)
     wandb.finish()
 
 

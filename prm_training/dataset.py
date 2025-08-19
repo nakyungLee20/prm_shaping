@@ -212,19 +212,6 @@ class PRMDataset(Dataset):
         return self.samples[i]
 
 # -------------------- Collators --------------------
-class PRMUnrollCollator:
-    def __init__(self, dtype=torch.long):
-        self.dtype = dtype
-    def __call__(self, batch):
-        input_ids      = torch.stack([b["input_ids"] for b in batch], dim=0)
-        attention_mask = torch.stack([b["attention_mask"] for b in batch], dim=0)
-        rw_pos         = torch.tensor([b["rw_pos"] for b in batch], dtype=torch.long)
-        targets        = torch.tensor([b["target"] for b in batch], dtype=torch.float32)
-        is_incorrect   = torch.tensor([b["is_incorrect"] for b in batch], dtype=torch.long)
-        meta           = [b["meta"] for b in batch]
-        return {"input_ids":input_ids, "attention_mask":attention_mask,
-                "rw_pos":rw_pos, "targets":targets, "is_incorrect":is_incorrect, "meta":meta}
-
 class PRMPackCollator:
     def __init__(self, pad_token_id: int, rw_token_id: int = None, strict: bool = False):
         self.pad = pad_token_id
@@ -272,7 +259,6 @@ class PRMPackCollator:
 
         def pad_stack(key, pad_val):
             seqs = [b[key] for b in batch]
-            # 텐서가 아닐 수도 있으니 텐서화
             seqs = [s if torch.is_tensor(s) else torch.tensor(s, dtype=torch.long) for s in seqs]
             maxlen = max(x.size(0) for x in seqs)
             out = torch.full((len(seqs), maxlen), pad_val, dtype=seqs[0].dtype)
@@ -295,3 +281,18 @@ class PRMPackCollator:
         return {"input_ids":input_ids, "attention_mask":attention_mask,
                 "rw_positions":rw_positions, "targets_list":targets_list,
                 "is_incorrect_list":incor_list, "meta":meta}
+
+
+class PRMUnrollCollator:
+    def __init__(self, dtype=torch.long):
+        self.dtype = dtype
+    def __call__(self, batch):
+        input_ids      = torch.stack([b["input_ids"] for b in batch], dim=0)
+        attention_mask = torch.stack([b["attention_mask"] for b in batch], dim=0)
+        rw_pos         = torch.tensor([b["rw_pos"] for b in batch], dtype=torch.long)
+        targets        = torch.tensor([b["target"] for b in batch], dtype=torch.float32)
+        is_incorrect   = torch.tensor([b["is_incorrect"] for b in batch], dtype=torch.long)
+        meta           = [b["meta"] for b in batch]
+        return {"input_ids":input_ids, "attention_mask":attention_mask,
+                "rw_pos":rw_pos, "targets":targets, "is_incorrect":is_incorrect, "meta":meta}
+
