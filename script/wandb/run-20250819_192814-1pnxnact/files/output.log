@@ -1,0 +1,22 @@
+  0%|          | 0/422 [00:00<?, ?it/s]/home/leena/prm_shaping/prm_training/training.py:60: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.detach().clone() or sourceTensor.detach().clone().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  pos = torch.tensor(inputs["rw_positions"][b], device=hs.device)
+100%|██████████| 422/422 [1:47:57<00:00, 15.35s/it]  
+{'loss': 0.2819, 'grad_norm': 25.956035614013672, 'learning_rate': 1.8650000000000003e-05, 'epoch': 0.24}
+/home/leena/.conda/envs/ccc/lib/python3.12/site-packages/peft/utils/save_and_load.py:300: UserWarning: Setting `save_embedding_layers` to `True` as the embedding layer has been resized during finetuning.
+{'eval_runtime': 79.117, 'eval_samples_per_second': 18.921, 'eval_steps_per_second': 2.376, 'epoch': 0.24}
+{'loss': 0.034, 'grad_norm': 17.61176300048828, 'learning_rate': 1.6150000000000003e-05, 'epoch': 0.47}
+{'eval_runtime': 79.4352, 'eval_samples_per_second': 18.846, 'eval_steps_per_second': 2.367, 'epoch': 0.47}
+{'loss': 0.0108, 'grad_norm': 13.664231300354004, 'learning_rate': 1.3650000000000001e-05, 'epoch': 0.71}
+{'eval_runtime': 79.4072, 'eval_samples_per_second': 18.852, 'eval_steps_per_second': 2.368, 'epoch': 0.71}
+{'loss': 0.0068, 'grad_norm': 12.84358024597168, 'learning_rate': 1.1150000000000002e-05, 'epoch': 0.95}
+{'eval_runtime': 79.2354, 'eval_samples_per_second': 18.893, 'eval_steps_per_second': 2.373, 'epoch': 0.95}
+{'loss': 0.0031, 'grad_norm': 16.864587783813477, 'learning_rate': 8.65e-06, 'epoch': 1.19}
+{'eval_runtime': 79.5181, 'eval_samples_per_second': 18.826, 'eval_steps_per_second': 2.364, 'epoch': 1.19}
+{'loss': 0.0066, 'grad_norm': 9.604589462280273, 'learning_rate': 6.15e-06, 'epoch': 1.42}
+{'eval_runtime': 79.278, 'eval_samples_per_second': 18.883, 'eval_steps_per_second': 2.371, 'epoch': 1.42}
+{'loss': 0.0033, 'grad_norm': 4.555392265319824, 'learning_rate': 3.65e-06, 'epoch': 1.66}
+{'eval_runtime': 79.4159, 'eval_samples_per_second': 18.85, 'eval_steps_per_second': 2.367, 'epoch': 1.66}
+{'loss': 0.0013, 'grad_norm': 2.0946433544158936, 'learning_rate': 1.1500000000000002e-06, 'epoch': 1.9}
+{'eval_runtime': 79.0214, 'eval_samples_per_second': 18.944, 'eval_steps_per_second': 2.379, 'epoch': 1.9}
+{'train_runtime': 6479.1485, 'train_samples_per_second': 4.16, 'train_steps_per_second': 0.065, 'train_loss': 0.04124189450701266, 'epoch': 2.0}
+  warnings.warn(

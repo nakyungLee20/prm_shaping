@@ -1,0 +1,16 @@
+  0%|          | 0/266 [00:00<?, ?it/s]/home/leena/prm_shaping/prm_training/training.py:60: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.detach().clone() or sourceTensor.detach().clone().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  pos = torch.tensor(inputs["rw_positions"][b], device=hs.device)
+100%|██████████| 266/266 [1:53:58<00:00, 25.71s/it]  
+{'loss': 0.2502, 'grad_norm': 27.107088088989258, 'learning_rate': 1.7222222222222224e-05, 'epoch': 0.38}
+/home/leena/.conda/envs/ccc/lib/python3.12/site-packages/peft/utils/save_and_load.py:300: UserWarning: Setting `save_embedding_layers` to `True` as the embedding layer has been resized during finetuning.
+{'eval_runtime': 133.3181, 'eval_samples_per_second': 16.839, 'eval_steps_per_second': 1.41, 'epoch': 0.38}
+{'loss': 0.0295, 'grad_norm': 2.7623095512390137, 'learning_rate': 1.3253968253968255e-05, 'epoch': 0.75}
+{'eval_runtime': 133.3666, 'eval_samples_per_second': 16.833, 'eval_steps_per_second': 1.41, 'epoch': 0.75}
+{'loss': 0.0073, 'grad_norm': 3.0127477645874023, 'learning_rate': 9.285714285714288e-06, 'epoch': 1.13}
+{'eval_runtime': 133.3624, 'eval_samples_per_second': 16.834, 'eval_steps_per_second': 1.41, 'epoch': 1.13}
+{'loss': 0.0049, 'grad_norm': 6.183248996734619, 'learning_rate': 5.317460317460318e-06, 'epoch': 1.5}
+{'eval_runtime': 133.2889, 'eval_samples_per_second': 16.843, 'eval_steps_per_second': 1.41, 'epoch': 1.5}
+{'loss': 0.0024, 'grad_norm': 0.8712627291679382, 'learning_rate': 1.3492063492063493e-06, 'epoch': 1.88}
+{'eval_runtime': 133.1921, 'eval_samples_per_second': 16.855, 'eval_steps_per_second': 1.411, 'epoch': 1.88}
+{'train_runtime': 6840.3755, 'train_samples_per_second': 3.721, 'train_steps_per_second': 0.039, 'train_loss': 0.055448892071170916, 'epoch': 2.0}
+  warnings.warn(

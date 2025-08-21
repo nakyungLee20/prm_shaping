@@ -1,0 +1,35 @@
+  0%|          | 0/266 [00:00<?, ?it/s]/home/leena/prm_shaping/prm_training/training.py:60: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.detach().clone() or sourceTensor.detach().clone().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  pos = torch.tensor(inputs["rw_positions"][b], device=hs.device)
+Traceback (most recent call last):
+  File "/home/leena/prm_shaping/prm_training/training.py", line 279, in <module>
+    main(cfg)
+  File "/home/leena/prm_shaping/prm_training/training.py", line 266, in main
+    trainer.train()
+  File "/home/leena/.conda/envs/ccc/lib/python3.12/site-packages/transformers/trainer.py", line 2206, in train
+    return inner_training_loop(
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/home/leena/.conda/envs/ccc/lib/python3.12/site-packages/transformers/trainer.py", line 2548, in _inner_training_loop
+    tr_loss_step = self.training_step(model, inputs, num_items_in_batch)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/leena/.conda/envs/ccc/lib/python3.12/site-packages/transformers/trainer.py", line 3797, in training_step
+    self.accelerator.backward(loss, **kwargs)
+  File "/home/leena/.conda/envs/ccc/lib/python3.12/site-packages/accelerate/accelerator.py", line 2553, in backward
+    loss.backward(**kwargs)
+  File "/home/leena/.conda/envs/ccc/lib/python3.12/site-packages/torch/_tensor.py", line 648, in backward
+    torch.autograd.backward(
+  File "/home/leena/.conda/envs/ccc/lib/python3.12/site-packages/torch/autograd/__init__.py", line 353, in backward
+    _engine_run_backward(
+  File "/home/leena/.conda/envs/ccc/lib/python3.12/site-packages/torch/autograd/graph.py", line 824, in _engine_run_backward
+    return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/leena/.conda/envs/ccc/lib/python3.12/site-packages/torch/autograd/function.py", line 307, in apply
+    return user_fn(self, *args)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/home/leena/.conda/envs/ccc/lib/python3.12/site-packages/torch/utils/checkpoint.py", line 320, in backward
+    torch.autograd.backward(outputs_with_grad, args_with_grad)
+  File "/home/leena/.conda/envs/ccc/lib/python3.12/site-packages/torch/autograd/__init__.py", line 353, in backward
+    _engine_run_backward(
+  File "/home/leena/.conda/envs/ccc/lib/python3.12/site-packages/torch/autograd/graph.py", line 824, in _engine_run_backward
+    return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 588.00 MiB. GPU 0 has a total capacity of 47.54 GiB of which 559.12 MiB is free. Including non-PyTorch memory, this process has 23.49 GiB memory in use. Process 1251676 has 23.49 GiB memory in use. Of the allocated memory 21.34 GiB is allocated by PyTorch, and 1.03 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)

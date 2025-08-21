@@ -1,0 +1,21 @@
+  0%|          | 0/398 [00:00<?, ?it/s]/home/leena/prm_shaping/prm_training/training.py:82: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.detach().clone() or sourceTensor.detach().clone().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  pos = torch.tensor(inputs["rw_positions"][b], device=hs.device)
+100%|██████████| 398/398 [38:41<00:00,  4.86s/it]Trainer.tokenizer is now deprecated. You should use Trainer.processing_class instead.
+{'loss': 0.7144, 'grad_norm': 48.793861389160156, 'learning_rate': 1.9071038251366122e-05, 'epoch': 0.25}
+100%|██████████| 398/398 [39:17<00:00,  5.92s/it]
+{'eval_runtime': 46.1265, 'eval_samples_per_second': 48.671, 'eval_steps_per_second': 4.076, 'epoch': 0.25}
+{'loss': 0.0444, 'grad_norm': 14.430732727050781, 'learning_rate': 1.633879781420765e-05, 'epoch': 0.5}
+{'eval_runtime': 46.0714, 'eval_samples_per_second': 48.729, 'eval_steps_per_second': 4.081, 'epoch': 0.5}
+{'loss': 0.0092, 'grad_norm': 5.626263618469238, 'learning_rate': 1.3606557377049181e-05, 'epoch': 0.75}
+{'eval_runtime': 45.9748, 'eval_samples_per_second': 48.831, 'eval_steps_per_second': 4.089, 'epoch': 0.75}
+{'loss': 0.0037, 'grad_norm': 3.4870643615722656, 'learning_rate': 1.0874316939890712e-05, 'epoch': 1.01}
+{'eval_runtime': 46.2486, 'eval_samples_per_second': 48.542, 'eval_steps_per_second': 4.065, 'epoch': 1.01}
+{'loss': 0.0034, 'grad_norm': 3.7350919246673584, 'learning_rate': 8.14207650273224e-06, 'epoch': 1.26}
+{'eval_runtime': 46.4877, 'eval_samples_per_second': 48.292, 'eval_steps_per_second': 4.044, 'epoch': 1.26}
+{'loss': 0.0022, 'grad_norm': 1.0238518714904785, 'learning_rate': 5.409836065573772e-06, 'epoch': 1.51}
+{'eval_runtime': 46.3331, 'eval_samples_per_second': 48.453, 'eval_steps_per_second': 4.058, 'epoch': 1.51}
+{'loss': 0.0017, 'grad_norm': 0.9263346791267395, 'learning_rate': 2.677595628415301e-06, 'epoch': 1.76}
+{'eval_runtime': 45.9507, 'eval_samples_per_second': 48.857, 'eval_steps_per_second': 4.091, 'epoch': 1.76}
+[HEAD SAVE] round-trip state_dict check: OK
+{'train_runtime': 2358.7664, 'train_samples_per_second': 10.791, 'train_steps_per_second': 0.169, 'train_loss': 0.09801874647675148, 'epoch': 2.0}
+[HEAD SAVE] round-trip state_dict check: OK

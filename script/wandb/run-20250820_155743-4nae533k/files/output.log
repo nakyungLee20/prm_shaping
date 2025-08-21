@@ -1,0 +1,44 @@
+  0%|          | 0/398 [00:00<?, ?it/s]/home/leena/prm_shaping/prm_training/training.py:82: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.detach().clone() or sourceTensor.detach().clone().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  pos = torch.tensor(inputs["rw_positions"][b], device=hs.device)
+100%|██████████| 398/398 [38:15<00:00,  4.80s/it]Traceback (most recent call last):
+{'loss': 0.7136, 'grad_norm': 49.05656814575195, 'learning_rate': 1.9071038251366122e-05, 'epoch': 0.25}
+  File "/home/leena/prm_shaping/prm_training/training.py", line 331, in <module>
+{'eval_runtime': 45.5372, 'eval_samples_per_second': 49.3, 'eval_steps_per_second': 4.128, 'epoch': 0.25}
+{'loss': 0.0443, 'grad_norm': 14.872536659240723, 'learning_rate': 1.633879781420765e-05, 'epoch': 0.5}
+{'eval_runtime': 45.5508, 'eval_samples_per_second': 49.286, 'eval_steps_per_second': 4.127, 'epoch': 0.5}
+{'loss': 0.0077, 'grad_norm': 2.490630626678467, 'learning_rate': 1.3606557377049181e-05, 'epoch': 0.75}
+{'eval_runtime': 45.5673, 'eval_samples_per_second': 49.268, 'eval_steps_per_second': 4.126, 'epoch': 0.75}
+{'loss': 0.0044, 'grad_norm': 1.8285598754882812, 'learning_rate': 1.0874316939890712e-05, 'epoch': 1.01}
+{'eval_runtime': 45.5617, 'eval_samples_per_second': 49.274, 'eval_steps_per_second': 4.126, 'epoch': 1.01}
+{'loss': 0.0027, 'grad_norm': 0.27873510122299194, 'learning_rate': 8.14207650273224e-06, 'epoch': 1.26}
+{'eval_runtime': 45.5275, 'eval_samples_per_second': 49.311, 'eval_steps_per_second': 4.129, 'epoch': 1.26}
+{'loss': 0.0015, 'grad_norm': 4.794445037841797, 'learning_rate': 5.409836065573772e-06, 'epoch': 1.51}
+{'eval_runtime': 45.5229, 'eval_samples_per_second': 49.316, 'eval_steps_per_second': 4.13, 'epoch': 1.51}
+{'loss': 0.0023, 'grad_norm': 1.9713114500045776, 'learning_rate': 2.677595628415301e-06, 'epoch': 1.76}
+{'eval_runtime': 45.493, 'eval_samples_per_second': 49.348, 'eval_steps_per_second': 4.133, 'epoch': 1.76}
+    main(cfg)
+  File "/home/leena/prm_shaping/prm_training/training.py", line 315, in main
+    trainer.train()
+  File "/home/leena/.conda/envs/ccc/lib/python3.12/site-packages/transformers/trainer.py", line 2206, in train
+    return inner_training_loop(
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/home/leena/.conda/envs/ccc/lib/python3.12/site-packages/transformers/trainer.py", line 2623, in _inner_training_loop
+    self._maybe_log_save_evaluate(
+  File "/home/leena/.conda/envs/ccc/lib/python3.12/site-packages/transformers/trainer.py", line 3103, in _maybe_log_save_evaluate
+    self._save_checkpoint(model, trial)
+  File "/home/leena/.conda/envs/ccc/lib/python3.12/site-packages/transformers/trainer.py", line 3200, in _save_checkpoint
+    self.save_model(output_dir, _internal_call=True)
+  File "/home/leena/.conda/envs/ccc/lib/python3.12/site-packages/transformers/trainer.py", line 3937, in save_model
+    self._save(output_dir)
+  File "/home/leena/.conda/envs/ccc/lib/python3.12/site-packages/transformers/trainer.py", line 4035, in _save
+    safetensors.torch.save_file(
+  File "/home/leena/.conda/envs/ccc/lib/python3.12/site-packages/safetensors/torch.py", line 286, in save_file
+    serialize_file(_flatten(tensors), filename, metadata=metadata)
+                   ^^^^^^^^^^^^^^^^^
+  File "/home/leena/.conda/envs/ccc/lib/python3.12/site-packages/safetensors/torch.py", line 488, in _flatten
+    raise RuntimeError(
+RuntimeError:
+            Some tensors share memory, this will lead to duplicate memory on disk and potential differences when loading them again: [{'backbone.lm_head.weight', 'backbone.model.embed_tokens.weight'}].
+            A potential way to correctly save your model is to use `save_model`.
+            More information at https://huggingface.co/docs/safetensors/torch_shared_tensors
+
