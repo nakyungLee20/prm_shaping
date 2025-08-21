@@ -1,12 +1,12 @@
 #!/bin/sh
-#SBATCH -J 1b_shap
-#SBATCH -p gpu02
-#SBATCH --gres=gpu:1
+#SBATCH -J maj_gsm
+#SBATCH -p gpu03
+#SBATCH --gres=gpu:4
 #SBATCH --ntasks=12
 #SBATCH -o /home/leena/prm_shaping/logs/%x_%A.out
 
 RUN="python"
-FILE="/home/leena/prm_shaping/prm_training/training.py"
+FILE="/home/leena/prm_shaping/inference/prm_gsm8k_eval_bon.py"
 
 for se in 0
 do

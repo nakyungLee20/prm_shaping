@@ -1,0 +1,3 @@
+  0%|          | 0/266 [00:00<?, ?it/s]/home/leena/prm_shaping/prm_training/training.py:60: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.detach().clone() or sourceTensor.detach().clone().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  pos = torch.tensor(inputs["rw_positions"][b], device=hs.device)
+  1%|          | 2/266 [00:57<2:11:26, 29.87s/it]

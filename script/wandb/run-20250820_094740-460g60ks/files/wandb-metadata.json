@@ -1,0 +1,93 @@
+{
+  "os":  "Linux-4.18.0-425.3.1.el8.x86_64-x86_64-with-glibc2.28",
+  "python":  "CPython 3.12.11",
+  "startedAt":  "2025-08-20T00:47:40.432061Z",
+  "args":  [
+    "--norm_mode",
+    "signed",
+    "--output_dir",
+    "/home/leena/prm_shaping/checkpoints/mi_shapley/signed"
+  ],
+  "program":  "/home/leena/prm_shaping/prm_training/training.py",
+  "email":  "belovedyours10@gmail.com",
+  "root":  "/data/users/leena/prm_shaping/script",
+  "host":  "gpu04",
+  "executable":  "/home/leena/.conda/envs/ccc/bin/python",
+  "cpu_count":  56,
+  "cpu_count_logical":  112,
+  "gpu":  "NVIDIA RTX A6000",
+  "gpu_count":  1,
+  "disk":  {
+    "/":  {
+      "total":  "270227443712",
+      "used":  "5059366912"
+    }
+  },
+  "memory":  {
+    "total":  "540454891520"
+  },
+  "gpu_nvidia":  [
+    {
+      "name":  "NVIDIA RTX A6000",
+      "memoryTotal":  "51527024640",
+      "cudaCores":  10752,
+      "architecture":  "Ampere",
+      "uuid":  "GPU-ae9bf8b0-2a07-90f9-ffe7-7503fb3fd115"
+    }
+  ],
+  "cudaVersion":  "12.0",
+  "slurm":  {
+    "cluster_name":  "cmlab_cluster",
+    "conf":  "/var/spool/slurmd/conf-cache/slurm.conf",
+    "cpu_bind":  "quiet,mask_cpu:0x0000000000000000000000000001,0x0000000000000000000000000002,0x0000000000000100000000000000,0x0000000000000200000000000000,0x0000000000000000000000000004,0x0000000000000000000000000008,0x0000000000000400000000000000,0x0000000000000800000000000000,0x0000000000000000000000000010,0x0000000000000000000000000020,0x0000000000001000000000000000,0x0000000000002000000000000000",
+    "cpu_bind_list":  "0x0000000000000000000000000001,0x0000000000000000000000000002,0x0000000000000100000000000000,0x0000000000000200000000000000,0x0000000000000000000000000004,0x0000000000000000000000000008,0x0000000000000400000000000000,0x0000000000000800000000000000,0x0000000000000000000000000010,0x0000000000000000000000000020,0x0000000000001000000000000000,0x0000000000002000000000000000",
+    "cpu_bind_type":  "mask_cpu:",
+    "cpu_bind_verbose":  "quiet",
+    "cpus_on_node":  "12",
+    "distribution":  "block",
+    "gpus_on_node":  "1",
+    "gtids":  "0,1,2,3,4,5,6,7,8,9,10,11",
+    "job_cpus_per_node":  "12",
+    "job_cpus_per_node_pack_group_0":  "12",
+    "job_gid":  "1024",
+    "job_gpus":  "0",
+    "job_id":  "32850",
+    "job_name":  "mi_tr3",
+    "job_nodelist":  "gpu04",
+    "job_num_nodes":  "1",
+    "job_partition":  "gpu04",
+    "job_qos":  "normal",
+    "job_uid":  "1024",
+    "job_user":  "leena",
+    "jobid":  "32850",
+    "launch_node_ipaddr":  "10.1.1.4",
+    "localid":  "7",
+    "nnodes":  "1",
+    "node_aliases":  "(null)",
+    "nodeid":  "0",
+    "nodelist":  "gpu04",
+    "nprocs":  "12",
+    "ntasks":  "12",
+    "prio_process":  "0",
+    "procid":  "7",
+    "srun_comm_host":  "10.1.1.4",
+    "srun_comm_port":  "42607",
+    "step_gpus":  "0",
+    "step_id":  "0",
+    "step_launcher_port":  "42607",
+    "step_nodelist":  "gpu04",
+    "step_num_nodes":  "1",
+    "step_num_tasks":  "12",
+    "step_tasks_per_node":  "12",
+    "stepid":  "0",
+    "submit_dir":  "/data/users/leena/prm_shaping/script",
+    "submit_host":  "cmlab",
+    "task_pid":  "1374025",
+    "tasks_per_node":  "12",
+    "topology_addr":  "gpu04",
+    "topology_addr_pattern":  "node",
+    "umask":  "0002",
+    "working_cluster":  "cmlab_cluster:cmlab:6817:9728:109"
+  },
+  "writerId":  "w167n6i72kamq8itxil20ee8bhtpibml"
+}

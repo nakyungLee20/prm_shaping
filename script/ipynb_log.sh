@@ -3,7 +3,7 @@
 #SBATCH -p gpu03
 #SBATCH --gres=gpu:1
 #SBATCH --ntasks=12
-#SBATCH -t 10:00:00 
+#SBATCH -t 12:00:00 
 #SBATCH -o /home/leena/prm_shaping/logs/%x_%A.out
 
 ## 1. 현재 작업이 실행 중인 노드의 호스트 이름(주소)을 가져옵니다.
