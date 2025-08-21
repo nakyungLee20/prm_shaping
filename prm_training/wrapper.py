@@ -20,7 +20,6 @@ def _read_json(path: str) -> Dict[str, Any]:
     with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
 
-
 class PRMRewardWrapper(nn.Module):
     def __init__(self, backbone: PreTrainedModel, rw_token_id: Optional[int] = None, rw_token: Optional[str] = "<RW>"):
         super().__init__()
@@ -31,17 +30,28 @@ class PRMRewardWrapper(nn.Module):
         self.rw_token = rw_token
 
     def forward(self, input_ids=None, attention_mask=None, **kwargs):
-        # out = self.backbone(input_ids=input_ids, attention_mask=attention_mask, output_hidden_states=True,use_cache=False, return_dict=True,)
-        # hs = out.hidden_states[-1]        # (B, T, H)
-        # return hs
-        transformer_blocks = self.backbone.base_model.model.model
-        outputs = transformer_blocks(
+        # transformer_blocks = self.backbone.base_model.model.model
+        # outputs = transformer_blocks(
+        #     input_ids=input_ids,
+        #     attention_mask=attention_mask,
+        #     return_dict=True,
+        #     use_cache=False,
+        # )
+        # return outputs.last_hidden_state
+        out = self.backbone(
             input_ids=input_ids,
             attention_mask=attention_mask,
-            return_dict=True,
+            output_hidden_states=True,
             use_cache=False,
+            return_dict=True,
         )
-        return outputs.last_hidden_state
+        if hasattr(out, "hidden_states") and out.hidden_states is not None:
+            hs = out.hidden_states[-1]        # (B,T,H) 마지막 레이어
+        elif hasattr(out, "last_hidden_state"):
+            hs = out.last_hidden_state        # 백업 경로
+        else:
+            raise RuntimeError("No hidden states on model outputs.")
+        return hs
 
     @property
     def config(self):
@@ -84,6 +94,13 @@ class PRMRewardWrapper(nn.Module):
             meta["storage"] = "backbone"
         torch.save(self.reward_head.state_dict(), os.path.join(save_directory, HEAD_FNAME))
         _write_json(meta, os.path.join(save_directory, META_FNAME))
+
+        # Check head state_dict consistency
+        chk = torch.load(os.path.join(save_directory, HEAD_FNAME), map_location="cpu")
+        for k, v in self.reward_head.state_dict().items():
+            assert k in chk, f"Missing key in saved head: {k}"
+            assert torch.allclose(v.cpu(), chk[k]), f"Mismatch in saved head param: {k}"
+        print("[HEAD SAVE] round-trip state_dict check: OK")
     
     @classmethod
     def from_pretrained(cls, model_dir: str, *, tokenizer=None, base_model_name_or_path: Optional[str] = None, 
@@ -109,6 +126,16 @@ class PRMRewardWrapper(nn.Module):
                 torch_dtype=torch_dtype,
                 trust_remote_code=True,
             )
+            if tokenizer is not None:
+                tok_len = len(tokenizer)
+                emb = base.get_input_embeddings()
+                emb_len = getattr(emb, "num_embeddings", None)
+                if emb_len is not None and emb_len != tok_len:
+                    print(f"[INFO] resize_token_embeddings: base {emb_len} -> tok {tok_len}")
+                    base.resize_token_embeddings(tok_len)
+                    # (선택) config에도 반영
+                    if hasattr(base.config, "vocab_size"):
+                        base.config.vocab_size = tok_len
             backbone = PeftModel.from_pretrained(base, adapter_dir, device_map=device_map)
         elif storage == "backbone":
             bb_dir = os.path.join(model_dir, "backbone")
@@ -119,6 +146,15 @@ class PRMRewardWrapper(nn.Module):
                 torch_dtype=torch_dtype,
                 trust_remote_code=True,
             )
+            if tokenizer is not None:
+                tok_len = len(tokenizer)
+                emb = backbone.get_input_embeddings()
+                emb_len = getattr(emb, "num_embeddings", None)
+                if emb_len is not None and emb_len != tok_len:
+                    print(f"[INFO] resize_token_embeddings: base {emb_len} -> tok {tok_len}")
+                    backbone.resize_token_embeddings(tok_len)
+                    if hasattr(backbone.config, "vocab_size"):
+                        backbone.config.vocab_size = tok_len
         else:
             adapter_dir = os.path.join(model_dir, "adapter")
             bb_dir = os.path.join(model_dir, "backbone")
@@ -130,11 +166,30 @@ class PRMRewardWrapper(nn.Module):
                 base = AutoModelForCausalLM.from_pretrained(
                     base_name, device_map=device_map, torch_dtype=torch_dtype, trust_remote_code=True
                 )
+                if tokenizer is not None:
+                    tok_len = len(tokenizer)
+                    emb = base.get_input_embeddings()
+                    emb_len = getattr(emb, "num_embeddings", None)
+                    if emb_len is not None and emb_len != tok_len:
+                        print(f"[INFO] resize_token_embeddings: base {emb_len} -> tok {tok_len}")
+                        base.resize_token_embeddings(tok_len)
+                        # (선택) config에도 반영
+                        if hasattr(base.config, "vocab_size"):
+                            base.config.vocab_size = tok_len
                 backbone = PeftModel.from_pretrained(base, adapter_dir, device_map=device_map)
             elif os.path.isdir(bb_dir):
                 backbone = AutoModelForCausalLM.from_pretrained(
                     bb_dir, device_map=device_map, torch_dtype=torch_dtype, trust_remote_code=True
                 )
+                if tokenizer is not None:
+                    tok_len = len(tokenizer)
+                    emb = backbone.get_input_embeddings()
+                    emb_len = getattr(emb, "num_embeddings", None)
+                    if emb_len is not None and emb_len != tok_len:
+                        print(f"[INFO] resize_token_embeddings: base {emb_len} -> tok {tok_len}")
+                        backbone.resize_token_embeddings(tok_len)
+                        if hasattr(backbone.config, "vocab_size"):
+                            backbone.config.vocab_size = tok_len
             else:
                 raise FileNotFoundError(f"Neither adapter/ nor backbone/ exists in {model_dir}")
 
@@ -152,6 +207,20 @@ class PRMRewardWrapper(nn.Module):
         sd = torch.load(head_path, map_location=backbone.device)
         wrapper.reward_head.load_state_dict(sd)
 
+        # check reward head state_dict consistency
+        with torch.no_grad():
+            w = wrapper.reward_head.weight
+            b = wrapper.reward_head.bias
+            w_mean, w_std = float(w.mean()), float(w.std())
+            b_mean = float(b.mean()) if b is not None else None
+        print(f"[HEAD LOADED] w: mean={w_mean:.6f}, std={w_std:.6f} | b={b_mean}")
+        
+        if wrapper.rw_token is not None:
+            assert wrapper.rw_token in tokenizer.get_vocab(), f"rw_token '{wrapper.rw_token}' not in vocab"
+            if wrapper.rw_token_id is None:
+                wrapper.rw_token_id = int(tokenizer.convert_tokens_to_ids(wrapper.rw_token))
+            print(f"[RW] token='{wrapper.rw_token}', id={wrapper.rw_token_id}")
+
         if hasattr(wrapper.backbone.config, "use_cache"):
             wrapper.backbone.config.use_cache = False
 
@@ -160,6 +229,8 @@ class PRMRewardWrapper(nn.Module):
     def predict_rewards_at_rw(self, input_ids: torch.Tensor, attention_mask: torch.Tensor, rw_positions: Optional[List[torch.Tensor]] = None) -> List[torch.Tensor]:
         hs = self(input_ids=input_ids, attention_mask=attention_mask)  # (B,T,H)
         self._ensure_head_matches(hs)
+        print(f"[PRED] hs shape: {tuple(hs.shape)} | head in={self.reward_head.in_features}", flush=True)
+        
         B, T, H = hs.shape
         out = []
         if rw_positions is None:
@@ -167,9 +238,13 @@ class PRMRewardWrapper(nn.Module):
             rw_positions = []
             for b in range(B):
                 pos = (input_ids[b] == self.rw_token_id).nonzero(as_tuple=False).flatten()
+                if pos.device != hs.device:
+                    pos = pos.to(hs.device)
                 rw_positions.append(pos)
         for b in range(B):
             pos = rw_positions[b]
+            if pos.device != hs.device:
+                pos = pos.to(hs.device)
             if pos.numel() == 0:
                 out.append(torch.empty(0, device=hs.device))
                 continue

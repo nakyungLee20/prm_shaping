@@ -66,17 +66,41 @@ PROMPT_TEMPLATES = [
     "Think step by step and show your reasoning.\n\nProblem: {q}",
 ]
 
+# Prompt helpers
+SYSTEM_PROMPT = (
+    "You are Qwen-Math, a meticulous math tutor. "
+    "Solve problems with clear, numbered steps and give only ONE final answer line."
+)
+
+def build_user_prompt(question: str) -> str:
+    header = (
+        "Please reason step by step. Follow this EXACT format:\n"
+        "Step 1: <short reasoning>\n"
+        "Step 2: <short reasoning>\n"
+        "...\n"
+        "Answer: <final simplified answer>\n"
+        "Constraints:\n"
+        "- Keep each step concise, one idea per line.\n"
+        "- Put the final answer in LaTeX box: `Answer: \\boxed{...}` if possible.\n"
+        "- Do not include extra explanations after the final Answer line.\n"
+    )
+    parts = [header]
+    parts.append("Problem: " + question.strip())
+    return "\n".join(parts).strip()
+
+def join_steps_with_rw(steps: List[str], rw_token: str = "<RW>") -> str:
+    return (rw_token.join(s.strip() for s in steps)) + rw_token
+
+
 class PRMDataset(Dataset):
-    """
-    PRM 학습용 전처리:
-    - mode="unroll": (prefix upto step_i + <RW>) → target=r_i  (스텝별 샘플)
-    - mode="pack": (전체 스텝 + 각 스텝 뒤 <RW>) → targets=[r_1,..,r_n], rw_positions=[...]
-    """
+    """ mode="pack": (전체 스텝 + 각 스텝 뒤 <RW>) → targets=[r_1,..,r_n], rw_positions=[...]"""
     def __init__(
         self,
         entries: List[dict],
         tokenizer,
         *,
+        use_chat_template: bool = True,
+        system_prompt: str = SYSTEM_PROMPT,
         reward_key: Optional[str] = None,
         reward_source_priority: List[str] = ("mi_norm", "mi_loo", "mi_shapley", "mi_margin", "ori_rewards", "contributions"),
         apply_norm: bool = True,
@@ -102,6 +126,8 @@ class PRMDataset(Dataset):
         self.step_dropout = step_dropout
         self.incorrect_weight = incorrect_weight
         self.rand_prompt_variant = rand_prompt_variant
+        self.use_chat_template = use_chat_template
+        self.system_prompt = system_prompt
 
         # special token 등록
         if self.add_rw_token and rw_token not in self.tok.get_vocab():
@@ -163,14 +189,24 @@ class PRMDataset(Dataset):
                         "meta": {"q": q, "step_idx": i},
                     })
             else:                       # total + token inserted dataset
-                lines = [prefix0]
-                rw_positions = []
-                for i, st in enumerate(steps):
-                    lines.append(st)
-                    if self.add_rw_token:
-                        lines.append(self.rw_token)
-                text = "\n".join(lines)
-                enc = self._encode(text, self.max_length, self.truncate_strategy)
+                if self.use_chat_template:
+                    assistant_text = join_steps_with_rw(steps, self.rw_token)
+                    msgs = [
+                        {"role": "system", "content": self.system_prompt},
+                        {"role": "user", "content": build_user_prompt(q)},
+                        {"role": "assistant", "content": assistant_text},
+                    ]
+                    conv_str = self.tok.apply_chat_template(msgs, tokenize=False, add_generation_prompt=False)
+                    enc = self._encode(conv_str, self.max_length, self.truncate_strategy)
+                else:
+                    lines = [prefix0]
+                    rw_positions = []
+                    for i, st in enumerate(steps):
+                        lines.append(st)
+                        if self.add_rw_token:
+                            lines.append(self.rw_token)
+                    text = "\n".join(lines)
+                    enc = self._encode(text, self.max_length, self.truncate_strategy)
                 rw_positions = self._find_all_rw_positions(enc) if self.add_rw_token else []
                 n_valid = min(len(rw_positions), len(reward_vec))
                 rw_positions = rw_positions[:n_valid]
