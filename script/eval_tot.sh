@@ -1,5 +1,5 @@
 #!/bin/sh
-#SBATCH -J bon_math_loo
+#SBATCH -J bon_math_shap_1.5b
 #SBATCH -p gpu03
 #SBATCH --gres=gpu:4
 #SBATCH --ntasks=12
